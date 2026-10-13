@@ -1,0 +1,18 @@
+Pull updated csv file from SharePoint daily:
+
+D10
+ESA.xlsx
+
+
+
+Use as input for script. Current version: here:
+
+"O:\GIS_TEAM\ERM_GIS\Scripts\ESA_populate_missing_lat_Long.py"
+
+Please leave current version as-is for ad-hoc manual runs and testing
+Script currently updates ESA feature class that
+is referenced in MAI- no need to upload files or create tables.
+
+Estimated completion time: 4 hours
+
+https://pge.sharepoint.com/:x:/r/sites/VMPermitting2/_layouts/15/Doc.aspx?sourcedoc=%7B81B03E9E-F318-43D2-8470-5485BB61F063%7D&file=D10%20ESA.xlsx&action=default&mobileredirect=true&DefaultItemOpen=1&wdOrigin=WAC.EXCEL.HOME-BUTTON%2CAPPHOME-WEB.JUMPBACKIN&wdPreviousSession=455e9328-7a0c-4fe8-a00d-e585b3477fa8&wdPreviousSessionSrc=Wac&ct=1791895345040
