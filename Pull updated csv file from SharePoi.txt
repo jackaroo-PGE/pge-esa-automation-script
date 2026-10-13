@@ -21,9 +21,19 @@ https://pge.sharepoint.com/:x:/r/sites/VMPermitting2/_layouts/15/Doc.aspx?source
 
 RX-08162548
 RX-08162962
-SELECT *
-FROM [Constraint].[dbo].[RPT_PRESCRIPTION]
-WHERE pk_s_prescription_name IN (
+SELECT
+    rx.pk_s_prescription_name AS Prescription_Number,
+    TRY_CONVERT(decimal(12,6), mai.Y6_LatKey) AS Latitude,
+    TRY_CONVERT(decimal(12,6), mai.X6_LongKey) AS Longitude,
+    mai.ESA_Caltrans
+FROM [Constraint].[dbo].[MASTER_AGENCY_INTERSECT] AS mai
+JOIN [Constraint].[dbo].[RPT_PRESCRIPTION] AS rx
+    ON TRY_CONVERT(decimal(12,6), mai.Y6_LatKey)
+       = TRY_CONVERT(decimal(12,6), rx.n_rx_y6_latitude)
+   AND TRY_CONVERT(decimal(12,6), mai.X6_LongKey)
+       = TRY_CONVERT(decimal(12,6), rx.n_rx_x6_longitude)
+WHERE rx.pk_s_prescription_name IN (
     'RX-08162548',
     'RX-08162962'
-);
+)
+ORDER BY rx.pk_s_prescription_name;
