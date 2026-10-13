@@ -1,0 +1,176 @@
+@echo off
+setlocal EnableExtensions EnableDelayedExpansion
+
+REM ------------------------------------------------------------
+REM HCP Analysis Monthly Automation - Task Scheduler Launcher
+REM ------------------------------------------------------------
+
+
+REM ------------------------------------------------------------
+REM Repository / script path setup
+REM ------------------------------------------------------------
+set "SCRIPT_DIR=\\smb.rcnas03.pge.com\SanRamon03\GroupShared\CMT_ETL\GIS_TEAM\ERM_GIS\Scripts\HCP_Analysis_Monthly_Automation\HCP_Analysis_Monthly_Automation.py"
+set "SCRIPT=%SCRIPT_DIR%\HCP_Analysis_Monthly_Automation.py"
+
+REM ------------------------------------------------------------
+REM Log output folder
+REM ------------------------------------------------------------
+set "LOG_DIR=\\smb.rcnas03.pge.com\SanRamon03\GroupShared\CMT_ETL\GIS_TEAM\ERM_GIS\Scripts\HCP_Analysis_Monthly_Automation\Log"
+
+if not exist "%LOG_DIR%" mkdir "%LOG_DIR%"
+
+for /f %%i in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd_HHmmss"') do set "TS=%%i"
+
+set "LOG_FILE=%LOG_DIR%\HCP_Analysis_Monthly_Automation%TS%.log"
+
+
+
+REM ------------------------------------------------------------
+REM Python
+REM ------------------------------------------------------------
+set "PYTHON_EXE=C:\Program Files\ArcGIS\Pro\bin\Python\envs\arcgispro-py3\python.exe"
+
+
+REM ------------------------------------------------------------
+REM Python environment isolation
+REM Prevents ArcGIS Pro Python from loading conflicting packages from:
+REM C:\Users\<user>\AppData\Roaming\Python\Python311\site-packages
+REM ------------------------------------------------------------
+set "PYTHONNOUSERSITE=1"
+set "PYTHONPATH="
+set "PYTHONHOME="
+set "PIP_USER=0"
+
+
+REM ------------------------------------------------------------
+REM Force UTF-8 output so Python print statements do not fail
+REM when logs contain symbols like <=, >=, checkmarks, arrows, etc.
+REM PYTHONUNBUFFERED helps the log update in real time during long runs.
+REM ------------------------------------------------------------
+set "PYTHONUTF8=1"
+set "PYTHONIOENCODING=utf-8"
+set "PYTHONUNBUFFERED=1"
+chcp 65001 >nul
+
+
+REM ------------------------------------------------------------
+REM DEBUG - print variables to command prompt
+REM ------------------------------------------------------------
+echo SCRIPT_DIR: %SCRIPT_DIR%
+echo SCRIPT:     %SCRIPT%
+echo PYTHON_EXE: %PYTHON_EXE%
+echo LOG_FILE:   %LOG_FILE%
+
+
+REM ------------------------------------------------------------
+REM Initialize log file
+REM Important: first line uses > to create/overwrite the log.
+REM All later lines use >> to append.
+REM ------------------------------------------------------------
+echo ============================================================> "%LOG_FILE%"
+echo HCP Analysis Monthly Automation Started: %date% %time%>> "%LOG_FILE%"
+echo ============================================================>> "%LOG_FILE%"
+echo SCRIPT_DIR: %SCRIPT_DIR%>> "%LOG_FILE%"
+echo SCRIPT:     %SCRIPT%>> "%LOG_FILE%"
+echo PYTHON_EXE: %PYTHON_EXE%>> "%LOG_FILE%"
+echo LOG_FILE:   %LOG_FILE%>> "%LOG_FILE%"
+echo PYTHONNOUSERSITE: %PYTHONNOUSERSITE%>> "%LOG_FILE%"
+echo PYTHONPATH: %PYTHONPATH%>> "%LOG_FILE%"
+echo PYTHONHOME: %PYTHONHOME%>> "%LOG_FILE%"
+echo PIP_USER: %PIP_USER%>> "%LOG_FILE%"
+echo PYTHONUTF8: %PYTHONUTF8%>> "%LOG_FILE%"
+echo PYTHONIOENCODING: %PYTHONIOENCODING%>> "%LOG_FILE%"
+echo PYTHONUNBUFFERED: %PYTHONUNBUFFERED%>> "%LOG_FILE%"
+echo CODEPAGE: UTF-8 / 65001>> "%LOG_FILE%"
+echo ============================================================>> "%LOG_FILE%"
+
+
+REM ------------------------------------------------------------
+REM Validate paths
+REM ------------------------------------------------------------
+IF NOT EXIST "%SCRIPT_DIR%" (
+    echo ERROR: Script directory not found: %SCRIPT_DIR%
+    echo ERROR: Script directory not found: %SCRIPT_DIR%>> "%LOG_FILE%"
+    endlocal & exit /b 102
+)
+
+IF NOT EXIST "%PYTHON_EXE%" (
+    echo ERROR: Python executable not found: %PYTHON_EXE%
+    echo ERROR: Python executable not found: %PYTHON_EXE%>> "%LOG_FILE%"
+    endlocal & exit /b 100
+)
+
+IF NOT EXIST "%SCRIPT%" (
+    echo ERROR: Python script not found: %SCRIPT%
+    echo ERROR: Python script not found: %SCRIPT%>> "%LOG_FILE%"
+    endlocal & exit /b 101
+)
+
+
+REM ------------------------------------------------------------
+REM Set working directory
+REM ------------------------------------------------------------
+cd /d "%SCRIPT_DIR%" || (
+    echo ERROR: Could not change directory to: %SCRIPT_DIR%
+    echo ERROR: Could not change directory to: %SCRIPT_DIR%>> "%LOG_FILE%"
+    endlocal & exit /b 103
+)
+
+
+REM ------------------------------------------------------------
+REM Python environment check
+REM Confirms pandas / numpy are not loading from AppData Roaming.
+REM Uses UTF-8 and unbuffered output for consistent Task Scheduler logging.
+REM ------------------------------------------------------------
+echo.>> "%LOG_FILE%"
+echo ---------------- PYTHON ENVIRONMENT CHECK ---------------->> "%LOG_FILE%"
+
+"%PYTHON_EXE%" -X utf8 -u -c "import sys, site; print('Python EXE:', sys.executable); print('User site enabled:', site.ENABLE_USER_SITE); print('User site:', site.getusersitepackages()); bad='AppData\\Roaming\\Python\\Python311\\site-packages'.lower(); bad_paths=[p for p in sys.path if bad in p.lower()]; print('Bad user-site paths:', bad_paths); import numpy, pandas; print('NumPy:', numpy.__version__, numpy.__file__); print('Pandas:', pandas.__version__, pandas.__file__); assert not bad_paths, 'ERROR: AppData Roaming user-site path is still on sys.path'; assert bad not in numpy.__file__.lower(), 'ERROR: numpy is loading from AppData Roaming'; assert bad not in pandas.__file__.lower(), 'ERROR: pandas is loading from AppData Roaming'; print('Environment check PASSED')" >> "%LOG_FILE%" 2>&1
+
+set "ENV_RC=%ERRORLEVEL%"
+
+IF %ENV_RC% NEQ 0 (
+    echo ERROR: Python environment check failed.
+    echo ERROR: Python environment check failed.>> "%LOG_FILE%"
+    echo Review log file: %LOG_FILE%
+    echo Review log file: %LOG_FILE%>> "%LOG_FILE%"
+    endlocal & exit /b %ENV_RC%
+)
+
+echo ---------------- END PYTHON ENVIRONMENT CHECK ------------>> "%LOG_FILE%"
+echo.>> "%LOG_FILE%"
+
+
+REM ------------------------------------------------------------
+REM Run HCP Analysis Monthly Automation
+REM -X utf8 prevents Unicode logging crashes.
+REM -u forces unbuffered output so the log updates during long processing.
+REM ------------------------------------------------------------
+echo ---------------- SCRIPT OUTPUT START ---------------->> "%LOG_FILE%"
+
+"%PYTHON_EXE%" -X utf8 -u "%SCRIPT%" >> "%LOG_FILE%" 2>&1
+
+set "RC=%ERRORLEVEL%"
+
+echo ---------------- SCRIPT OUTPUT END ------------------>> "%LOG_FILE%"
+
+
+REM ------------------------------------------------------------
+REM Finish
+REM ------------------------------------------------------------
+echo.>> "%LOG_FILE%"
+echo ============================================================>> "%LOG_FILE%"
+echo HCP Analysis Monthly Automation: %date% %time%>> "%LOG_FILE%"
+echo Exit Code: %RC%>> "%LOG_FILE%"
+echo ============================================================>> "%LOG_FILE%"
+
+IF %RC% NEQ 0 (
+    echo HCP Analysis Monthly Automation failed with exit code %RC%.
+    echo Log File: %LOG_FILE%
+) ELSE (
+    echo HCP Analysis Monthly Automation completed successfully.
+    echo Log File: %LOG_FILE%
+)
+
+endlocal & exit /b %RC%
+```
