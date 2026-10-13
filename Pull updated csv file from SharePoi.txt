@@ -21,3 +21,9 @@ https://pge.sharepoint.com/:x:/r/sites/VMPermitting2/_layouts/15/Doc.aspx?source
 
 RX-08162548
 RX-08162962
+SELECT *
+FROM [Constraint].[dbo].[RPT_PRESCRIPTION]
+WHERE pk_s_prescription_name IN (
+    'RX-08162548',
+    'RX-08162962'
+);
