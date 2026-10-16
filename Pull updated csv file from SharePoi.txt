@@ -37,3 +37,5 @@ WHERE rx.pk_s_prescription_name IN (
     'RX-08162962'
 )
 ORDER BY rx.pk_s_prescription_name;
+
+"\\smb.rcnas03.pge.com\SanRamon03\GroupShared\CMT_ETL\GIS_TEAM\ERM_GIS\Scripts\ESA_Daily_Automation\ESA_populate_missing_lat_Long_WORKING_JS.py"
